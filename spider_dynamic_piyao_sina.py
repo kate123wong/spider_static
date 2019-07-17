@@ -10,6 +10,7 @@ import re
 import platform
 from lxml import etree
 from datetime import datetime
+from selenium.common.exceptions import NoSuchElementException
 
 item =[]
 chrome_driver_path = ""
@@ -24,8 +25,8 @@ else:
 
 
 chrome_options = Options()
-chrome_options.add_argument('--headless')
-#chrome_options.add_argument('--disable-gpu')
+# chrome_options.add_argument('--headless')
+chrome_options.add_argument('--disable-gpu')
 driver = webdriver.Chrome(chrome_options=chrome_options, \
     executable_path=chrome_driver_path)
         
@@ -38,13 +39,15 @@ for i in range(0,100):
     i += 1
     time.sleep(4)
 
-number_s=[]
-title_s=[]
-for i in range(1,100):
 
-    time =  driver.find_element_by_xpath('//div[@class="zy_day" and position()='+str(i)+']/div[@class="day_date"]')
+for i in range(1,90):
+    number_s=[]
+    title_s=[]
+    try:
+        time =  driver.find_element_by_xpath('//div[@class="zy_day" and position()='+str(i)+']/div[@class="day_date"]')
+    except NoSuchElementException:
+        break
     time = time.text
-    print(time)
     titles=driver.find_elements_by_xpath('//div[@class="zy_day" and position()='+str(i)+']/div[@class="day_date"]/following-sibling::ul//div[@class="left_title"]')
     numbers=driver.find_elements_by_xpath('//div[@class="zy_day" and position()='+str(i)+']/div[@class="day_date"]/following-sibling::ul//div[@class="like_text"]')
     for i in titles:
@@ -57,12 +60,14 @@ for i in range(1,100):
         dic={}
         dic['title'] = title
         dic['time'] = time
-        dic['number'] = int(number)
-        print(number)
+        if(number.isnumeric()):
+            dic['number'] = int(number)
+        else:
+            dic['number']=0
         item.append(dic)
 
 driver.quit()
-sorted(item,key=lambda x:x['number'],reverse=False)
-print("谣言排名前10的依次是：",end="\n")
-for i in item[:10]:
+item = sorted(item,key=lambda x:x['number'],reverse=True)
+print("3个月的谣言依次是：",end="\n")
+for i in item[:]:
     print("谣言：",'\t',i['title'],'\t',"点赞数：",'\t',i['number'],'\t',"时间：",'\t',i['time'],end='\n')
